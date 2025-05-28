@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "PLAINTEXT_HOST"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      CLUSTER_ID: "Nk018hRAQFytWskYqtQduw"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG_RETENTION_MS: 2592000000
+      KAFKA_LOG_RETENTION_BYTES: 1073741824
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: 209715200
+
+  traffic-processor:
+    build: ./traffic_processor
+    container_name: traffic-processor
+    depends_on:
+      - kafka
+    volumes:
+      - ./traffic_processor:/app
+
+  spark-consumer:
+    build: ./spark_consumer
+    container_name: spark-consumer
+    depends_on:
+      - kafka
+      - redis
+    volumes:
+      - ./spark_consumer:/app
+      - ./spark_consumer/output:/app/output
+      - ./spark_consumer/checkpoint:/app/checkpoint
+    ports:
+      - "4040:4040"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 8G
+    command: >
+      spark-submit
+      --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,com.redislabs:spark-redis_2.12:3.1.0
+      /app/spark_consumer.py
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  streamlit:
+    build: ./streamlit_app
+    container_name: streamlit
+    depends_on:
+      - redis
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./streamlit_app:/app
+
+volumes:
+  redis_data:

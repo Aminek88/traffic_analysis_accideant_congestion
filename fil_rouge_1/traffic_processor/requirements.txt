@@ -1,0 +1,4 @@
+ultralytics==8.3.0
+kafka-python==2.0.2
+pandas==2.2.2
+opencv-python==4.9.0.80
