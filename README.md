@@ -1,6 +1,6 @@
 # Video Processing Pipeline with Apache Airflow
 A comprehensive video processing and anomaly detection system built with Apache Airflow, featuring both batch and stream processing capabilities for real-time video analytics.
-## Architecture Overview
+### Architecture Overview
 This project implements a dual-pipeline architecture for video processing:
 
 Batch Processing Pipeline
